@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>숫자 정원 · Number Garden</title>
+</head>
+<body>
+<style>
+  :root{
+    --bg:#f7f2ea; --card:#fffdf9; --ink:#45403a; --muted:#8f8272;
+    --line:#e9dfd0; --soft:#f1e9dc;
+    --sage:#7d9270; --sage-soft:#e6ecdf;
+    --clay:#c47f66; --clay-soft:#f4e2da;
+    --gold:#c9a24b;
+    --shadow:0 1px 2px rgba(70,60,45,.06),0 6px 18px rgba(70,60,45,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#252220; --card:#2e2a27; --ink:#ece5da; --muted:#a29585;
+      --line:#3e3833; --soft:#38322d;
+      --sage:#93a884; --sage-soft:#3a4235;
+      --clay:#d29078; --clay-soft:#4a382f;
+      --gold:#d6b463;
+      --shadow:0 1px 2px rgba(0,0,0,.25),0 6px 18px rgba(0,0,0,.2);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#252220; --card:#2e2a27; --ink:#ece5da; --muted:#a29585;
+    --line:#3e3833; --soft:#38322d;
+    --sage:#93a884; --sage-soft:#3a4235;
+    --clay:#d29078; --clay-soft:#4a382f;
+    --gold:#d6b463;
+    --shadow:0 1px 2px rgba(0,0,0,.25),0 6px 18px rgba(0,0,0,.2);
+  }
+  :root[data-theme="light"]{
+    --bg:#f7f2ea; --card:#fffdf9; --ink:#45403a; --muted:#8f8272;
+    --line:#e9dfd0; --soft:#f1e9dc;
+    --sage:#7d9270; --sage-soft:#e6ecdf;
+    --clay:#c47f66; --clay-soft:#f4e2da;
+    --gold:#c9a24b;
+    --shadow:0 1px 2px rgba(70,60,45,.06),0 6px 18px rgba(70,60,45,.05);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    line-height:1.45; min-height:100dvh;
+  }
+  .app{max-width:430px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; padding:16px 18px calc(20px + env(safe-area-inset-bottom))}
+  .screen{display:none; flex:1; flex-direction:column; animation:fadein .35s ease}
+  .screen.on{display:flex}
+  @keyframes fadein{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+  button{font:inherit; color:inherit; border:none; background:none; cursor:pointer; touch-action:manipulation}
+
+  /* ---------- home ---------- */
+  .brand{text-align:center; margin:18px 0 4px}
+  .brand h1{font-size:30px; margin:0; font-weight:800; letter-spacing:-.5px}
+  .brand .sub{color:var(--muted); font-size:14px; margin-top:4px}
+  .statrow{display:flex; gap:10px; margin:18px 0 6px}
+  .stat{flex:1; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:10px 12px; text-align:center; box-shadow:var(--shadow)}
+  .stat .big{font-size:20px; font-weight:700}
+  .stat .lbl{font-size:11.5px; color:var(--muted); margin-top:1px}
+
+  .seg{display:flex; background:var(--soft); border-radius:14px; padding:4px; margin:14px 0 6px}
+  .seg button{flex:1; padding:9px 4px; border-radius:11px; font-size:13.5px; font-weight:600; color:var(--muted); transition:all .18s}
+  .seg button.sel{background:var(--card); color:var(--ink); box-shadow:var(--shadow)}
+  .sysnote{font-size:12.5px; color:var(--muted); text-align:center; min-height:34px; padding:2px 8px 8px}
+
+  .levels{display:flex; flex-direction:column; gap:10px; margin-top:4px}
+  .lvl{display:flex; align-items:center; gap:13px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:13px 15px; text-align:left; box-shadow:var(--shadow); transition:transform .12s}
+  .lvl:active{transform:scale(.98)}
+  .lvl .emo{font-size:26px; width:36px; text-align:center}
+  .lvl .nm{font-weight:700; font-size:15.5px}
+  .lvl .rg{font-size:12.5px; color:var(--muted)}
+  .lvl .stars{margin-left:auto; font-size:13px; letter-spacing:1px; color:var(--gold); white-space:nowrap}
+  .lvl.locked{opacity:.45}
+  .lvl.locked:active{transform:none}
+
+  .settings{margin-top:auto; padding-top:22px}
+  .toggle{display:flex; align-items:center; justify-content:space-between; padding:9px 4px; font-size:14px; color:var(--muted)}
+  .tog{width:44px; height:26px; border-radius:13px; background:var(--soft); border:1px solid var(--line); position:relative; transition:background .2s; flex:none}
+  .tog::after{content:""; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:var(--card); box-shadow:var(--shadow); transition:left .2s}
+  .tog.on{background:var(--sage)}
+  .tog.on::after{left:20px}
+
+  /* ---------- quiz ---------- */
+  .qtop{display:flex; align-items:center; gap:12px; margin-bottom:14px}
+  .iconbtn{font-size:20px; color:var(--muted); padding:6px 10px; border-radius:12px}
+  .iconbtn:active{background:var(--soft)}
+  .dots{display:flex; gap:5px; flex:1; justify-content:center}
+  .dot{width:9px; height:9px; border-radius:50%; background:var(--soft); border:1px solid var(--line); transition:all .2s}
+  .dot.now{transform:scale(1.35); border-color:var(--muted)}
+  .dot.ok{background:var(--sage); border-color:var(--sage)}
+  .dot.no{background:var(--clay); border-color:var(--clay)}
+  .flame{font-size:14px; font-weight:700; color:var(--muted); min-width:44px; text-align:right}
+
+  .qcard{background:var(--card); border:1px solid var(--line); border-radius:22px; padding:26px 20px 22px; text-align:center; box-shadow:var(--shadow); position:relative}
+  .qcard.shake{animation:shake .4s}
+  @keyframes shake{20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)}}
+  .chip{display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.4px; padding:4px 11px; border-radius:999px; margin-bottom:12px}
+  .chip.sino{background:var(--sage-soft); color:var(--sage)}
+  .chip.native{background:var(--clay-soft); color:var(--clay)}
+  .prompt-kr{font-size:42px; font-weight:800; letter-spacing:1px; line-height:1.25; word-break:keep-all}
+  .prompt-num{font-size:52px; font-weight:800}
+  .prompt-rom{color:var(--muted); font-size:15px; margin-top:6px; font-style:italic}
+  .task{font-size:12.5px; color:var(--muted); margin-top:12px}
+  .speak{position:absolute; top:14px; right:14px; font-size:19px; padding:6px 9px; border-radius:12px}
+  .speak:active{background:var(--soft)}
+  .earbtn{font-size:46px; padding:14px 26px; border-radius:20px; background:var(--soft)}
+  .earbtn:active{transform:scale(.95)}
+
+  .pad{display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:16px}
+  .pad button{background:var(--card); border:1px solid var(--line); border-radius:16px; font-size:24px; font-weight:600; padding:15px 0; box-shadow:var(--shadow); transition:transform .1s}
+  .pad button:active{transform:scale(.94); background:var(--soft)}
+  .pad .act{color:var(--muted); font-size:20px}
+  .pad .go{background:var(--sage); color:#fff; border-color:var(--sage)}
+  .entry{min-height:46px; margin-top:16px; text-align:center; font-size:34px; font-weight:800; letter-spacing:3px}
+  .entry .ph{color:var(--line); font-weight:400; font-size:26px; letter-spacing:0}
+
+  .choices{display:flex; flex-direction:column; gap:9px; margin-top:16px}
+  .choice{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:13px 16px; font-size:20px; font-weight:700; box-shadow:var(--shadow); transition:transform .1s; word-break:keep-all}
+  .choice .crom{display:block; font-size:12.5px; color:var(--muted); font-weight:400; font-style:italic; margin-top:1px}
+  .choice:active{transform:scale(.97)}
+  .choice.right{background:var(--sage-soft); border-color:var(--sage)}
+  .choice.wrong{background:var(--clay-soft); border-color:var(--clay)}
+
+  .feedback{margin-top:16px; text-align:center; min-height:64px}
+  .fb-msg{font-size:17px; font-weight:700}
+  .fb-msg.good{color:var(--sage)} .fb-msg.bad{color:var(--clay)}
+  .fb-ans{color:var(--muted); font-size:14.5px; margin-top:3px}
+  .nextbtn{margin-top:10px; background:var(--soft); border:1px solid var(--line); padding:10px 26px; border-radius:14px; font-weight:600; font-size:14.5px}
+
+  /* ---------- results ---------- */
+  .res{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px}
+  .res .remo{font-size:56px}
+  .res h2{margin:6px 0 0; font-size:24px}
+  .res .rstars{font-size:30px; letter-spacing:6px; color:var(--gold); margin:2px 0}
+  .res .rscore{color:var(--muted); font-size:15px}
+  .res .unlock{margin-top:10px; background:var(--sage-soft); color:var(--sage); font-weight:700; font-size:14px; padding:9px 18px; border-radius:999px}
+  .resbtns{display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px; margin-top:26px}
+  .btn{padding:14px; border-radius:16px; font-size:15.5px; font-weight:700; box-shadow:var(--shadow)}
+  .btn.pri{background:var(--sage); color:#fff}
+  .btn.sec{background:var(--card); border:1px solid var(--line)}
+  .btn:active{transform:scale(.97)}
+
+  .petal{position:fixed; top:-30px; font-size:22px; animation:fall linear forwards; pointer-events:none; z-index:9}
+  @keyframes fall{to{transform:translateY(110vh) rotate(340deg); opacity:.4}}
+</style>
+
+<div class="app">
+
+  <!-- HOME -->
+  <div class="screen on" id="s-home">
+    <div class="brand">
+      <h1>숫자 정원</h1>
+      <div class="sub">number garden · a cozy Korean numbers quiz</div>
+    </div>
+
+    <div class="statrow">
+      <div class="stat"><div class="big" id="st-streak">🔥 0</div><div class="lbl">best streak</div></div>
+      <div class="stat"><div class="big" id="st-acc">—</div><div class="lbl">accuracy</div></div>
+      <div class="stat"><div class="big" id="st-total">0</div><div class="lbl">answered</div></div>
+    </div>
+
+    <div class="seg" id="sysseg">
+      <button data-sys="sino">한자어 Sino</button>
+      <button data-sys="native">고유어 Native</button>
+      <button data-sys="both">둘 다 Both</button>
+    </div>
+    <div class="sysnote" id="sysnote"></div>
+
+    <div class="levels" id="levels"></div>
+
+    <div class="settings">
+      <div class="toggle"><span>Show romanization <span style="opacity:.7">(samsip-chil)</span></span><button class="tog" id="tg-rom" aria-label="toggle romanization"></button></div>
+      <div class="toggle"><span>Mix in listening questions 🔊</span><button class="tog" id="tg-listen" aria-label="toggle listening questions"></button></div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="s-quiz">
+    <div class="qtop">
+      <button class="iconbtn" id="quit" aria-label="quit round">✕</button>
+      <div class="dots" id="dots"></div>
+      <div class="flame" id="flame"></div>
+    </div>
+    <div class="qcard" id="qcard"></div>
+    <div id="answerarea"></div>
+    <div class="feedback" id="feedback"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="s-res">
+    <div class="res">
+      <div class="remo" id="remo">🍵</div>
+      <h2 id="rtitle"></h2>
+      <div class="rstars" id="rstars"></div>
+      <div class="rscore" id="rscore"></div>
+      <div class="unlock" id="runlock" style="display:none"></div>
+      <div class="resbtns">
+        <button class="btn pri" id="r-next" style="display:none">Next level →</button>
+        <button class="btn sec" id="r-again">Play again</button>
+        <button class="btn sec" id="r-home">Back to garden</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ---------------- number engine ---------------- */
+const SINO_D  = ["영","일","이","삼","사","오","육","칠","팔","구"];
+const SINO_DR = ["yeong","il","i","sam","sa","o","yuk","chil","pal","gu"];
+const SINO_U  = [[1000,"천","cheon"],[100,"백","baek"],[10,"십","sip"]];
+
+function sino(n){
+  let h = "", r = [], rem = n;
+  for (const [v, uh, ur] of SINO_U){
+    const d = Math.floor(rem / v);
+    if (d > 0){
+      if (d > 1){ h += SINO_D[d]; r.push(SINO_DR[d]); }
+      h += uh; r.push(ur);
+    }
+    rem %= v;
+  }
+  if (rem > 0){ h += SINO_D[rem]; r.push(SINO_DR[rem]); }
+  return { h, r: r.join("-") };
+}
+
+const NAT_U  = ["","하나","둘","셋","넷","다섯","여섯","일곱","여덟","아홉"];
+const NAT_UR = ["","hana","dul","set","net","daseot","yeoseot","ilgop","yeodeol","ahop"];
+const NAT_T  = ["","열","스물","서른","마흔","쉰","예순","일흔","여든","아흔"];
+const NAT_TR = ["","yeol","seumul","seoreun","maheun","swin","yesun","ilheun","yeodeun","aheun"];
+
+function native(n){
+  const t = Math.floor(n / 10), u = n % 10;
+  return { h: NAT_T[t] + NAT_U[u], r: [NAT_TR[t], NAT_UR[u]].filter(Boolean).join("-") };
+}
+
+const render = (n, sys) => sys === "sino" ? sino(n) : native(n);
+
+/* ---------------- levels ---------------- */
+const LEVELS = [
+  { id:1, emo:"🌱", name:"Seedling",  min:1,    max:10 },
+  { id:2, emo:"🌿", name:"Sprout",    min:1,    max:30 },
+  { id:3, emo:"🌸", name:"Blossom",   min:1,    max:99 },
+  { id:4, emo:"🌳", name:"Tree",      min:100,  max:999,  sinoOnly:true },
+  { id:5, emo:"🌲", name:"Forest",    min:1000, max:9999, sinoOnly:true },
+];
+
+const SYS_NOTES = {
+  sino:   "일, 이, 삼… — used for dates, money, phone numbers, minutes, and anything over 99.",
+  native: "하나, 둘, 셋… — used for counting things, your age, and hours. Goes up to 99.",
+  both:   "Questions mix both systems — the little tag on each card tells you which one.",
+};
+
+/* ---------------- state & storage ---------------- */
+const DEFAULTS = { unlocked:1, stars:{}, bestStreak:0, total:0, correct:0, rom:true, listen:true, system:"sino" };
+let S;
+try { S = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem("numgarden") || "{}")); }
+catch { S = Object.assign({}, DEFAULTS); }
+const save = () => { try { localStorage.setItem("numgarden", JSON.stringify(S)); } catch {} };
+
+/* ---------------- tts ---------------- */
+const ttsOK = "speechSynthesis" in window;
+let koVoice = null;
+function pickVoice(){
+  if (!ttsOK) return;
+  koVoice = speechSynthesis.getVoices().find(v => v.lang && v.lang.toLowerCase().startsWith("ko")) || null;
+}
+if (ttsOK){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function speak(text){
+  if (!ttsOK) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ko-KR"; if (koVoice) u.voice = koVoice; u.rate = 0.82;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+/* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
+const randInt = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--){ const j = randInt(0,i); [arr[i],arr[j]] = [arr[j],arr[i]]; } return arr; };
+const GOOD = ["잘했어요! ✨","아주 좋아요! 🌸","완벽해요! 🍵","멋져요! 🌿","좋아요! ☁️"];
+const BAD  = ["괜찮아요 🫖","아쉬워요 🍂","다음엔 맞출 거예요 🌙"];
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("on"));
+  $(id).classList.add("on");
+}
+
+/* ---------------- home ---------------- */
+function starStr(k){ return "★".repeat(k) + "☆".repeat(3 - k); }
+
+function renderHome(){
+  $("st-streak").textContent = "🔥 " + S.bestStreak;
+  $("st-acc").textContent = S.total ? Math.round(100 * S.correct / S.total) + "%" : "—";
+  $("st-total").textContent = S.total;
+  $("sysnote").textContent = SYS_NOTES[S.system];
+  document.querySelectorAll("#sysseg button").forEach(b =>
+    b.classList.toggle("sel", b.dataset.sys === S.system));
+  $("tg-rom").classList.toggle("on", S.rom);
+  $("tg-listen").classList.toggle("on", S.listen);
+
+  const box = $("levels"); box.innerHTML = "";
+  for (const lv of LEVELS){
+    const locked = lv.id > S.unlocked;
+    const naOnly = lv.sinoOnly && S.system === "native";
+    const el = document.createElement("button");
+    el.className = "lvl" + ((locked || naOnly) ? " locked" : "");
+    const range = lv.min === 1 ? "1 – " + lv.max : lv.min + " – " + lv.max;
+    el.innerHTML = `<span class="emo">${locked ? "🔒" : lv.emo}</span>
+      <span><span class="nm">${lv.name}</span><br><span class="rg">${range}${lv.sinoOnly ? " · sino only" : ""}</span></span>
+      <span class="stars">${locked ? "" : starStr(S.stars[lv.id] || 0)}</span>`;
+    if (!locked && !naOnly) el.onclick = () => startRound(lv);
+    else if (naOnly) el.onclick = () => { $("sysnote").textContent = "Native numbers stop at 99 — switch to Sino for the big ones! 🌳"; };
+    box.appendChild(el);
+  }
+}
+
+$("sysseg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  S.system = b.dataset.sys; save(); renderHome();
+});
+$("tg-rom").onclick = () => { S.rom = !S.rom; save(); renderHome(); };
+$("tg-listen").onclick = () => { S.listen = !S.listen; save(); renderHome(); };
+
+/* ---------------- quiz ---------------- */
+const ROUND_LEN = 10;
+let R = null; // current round
+
+function startRound(level){
+  R = { level, idx:0, score:0, streak:0, results:[], lastN:null, q:null, input:"", done:false };
+  show("s-quiz");
+  nextQuestion();
+}
+
+function pickMode(){
+  const canListen = S.listen && ttsOK && koVoice;
+  const roll = Math.random();
+  if (canListen && roll < 0.15) return "listen";
+  return roll < 0.55 ? "pad" : "choice";
+}
+
+function makeQuestion(){
+  const lv = R.level;
+  const sys = lv.sinoOnly ? "sino" : (S.system === "both" ? (Math.random() < 0.5 ? "sino" : "native") : S.system);
+  let n;
+  do { n = randInt(lv.min, lv.max); } while (n === R.lastN && lv.max > lv.min);
+  R.lastN = n;
+  return { n, sys, mode: pickMode(), word: render(n, sys) };
+}
+
+function distractors(q){
+  const lv = R.level, seen = new Set([q.n]), out = [];
+  const cands = [];
+  if (q.n >= 10 && q.n <= 99){
+    const swapped = (q.n % 10) * 10 + Math.floor(q.n / 10);
+    if (swapped >= 1) cands.push(swapped);
+  }
+  cands.push(q.n+1, q.n-1, q.n+10, q.n-10, q.n+2, q.n-2, q.n+100, q.n-100, q.n+1000, q.n-1000);
+  for (const c of cands){
+    if (out.length >= 3) break;
+    if (c >= Math.max(1, lv.min) && c <= lv.max && !seen.has(c)){ seen.add(c); out.push(c); }
+  }
+  let guard = 0;
+  while (out.length < 3 && guard++ < 200){
+    const c = randInt(Math.max(1, lv.min), lv.max);
+    if (!seen.has(c)){ seen.add(c); out.push(c); }
+  }
+  return out;
+}
+
+function renderDots(){
+  const d = $("dots"); d.innerHTML = "";
+  for (let i = 0; i < ROUND_LEN; i++){
+    const el = document.createElement("span");
+    el.className = "dot" + (i < R.results.length ? (R.results[i] ? " ok" : " no") : (i === R.idx ? " now" : ""));
+    d.appendChild(el);
+  }
+  $("flame").textContent = R.streak > 0 ? "🔥 " + R.streak : "";
+}
+
+function chipHTML(sys){
+  return `<span class="chip ${sys}">${sys === "sino" ? "한자어 · SINO" : "고유어 · NATIVE"}</span>`;
+}
+
+function nextQuestion(){
+  if (R.idx >= ROUND_LEN) return finishRound();
+  R.q = makeQuestion(); R.input = "";
+  const q = R.q;
+  renderDots();
+  $("feedback").innerHTML = "";
+  const card = $("qcard"); card.classList.remove("shake");
+
+  if (q.mode === "pad"){
+    card.innerHTML = `${chipHTML(q.sys)}
+      <div class="prompt-kr">${q.word.h}</div>
+      ${S.rom ? `<div class="prompt-rom">${q.word.r}</div>` : ""}
+      <div class="task">what number is this?</div>
+      <button class="speak" aria-label="listen">🔊</button>`;
+    card.querySelector(".speak").onclick = () => speak(q.word.h);
+    buildPad();
+  } else if (q.mode === "listen"){
+    card.innerHTML = `${chipHTML(q.sys)}
+      <div><button class="earbtn" aria-label="play audio">🔊</button></div>
+      <div class="task">listen, then tap the number you hear</div>`;
+    card.querySelector(".earbtn").onclick = () => speak(q.word.h);
+    buildPad();
+    setTimeout(() => speak(q.word.h), 350);
+  } else {
+    card.innerHTML = `${chipHTML(q.sys)}
+      <div class="prompt-num">${q.n}</div>
+      <div class="task">how do you say it in ${q.sys === "sino" ? "Sino-Korean" : "native Korean"}?</div>`;
+    buildChoices();
+  }
+}
+
+function buildPad(){
+  const area = $("answerarea");
+  area.innerHTML = `<div class="entry" id="entry"><span class="ph">tap the pad…</span></div>
+    <div class="pad" id="pad"></div>`;
+  const pad = $("pad");
+  const keys = ["1","2","3","4","5","6","7","8","9","⌫","0","✓"];
+  for (const k of keys){
+    const b = document.createElement("button");
+    b.textContent = k;
+    if (k === "⌫") b.className = "act";
+    if (k === "✓") b.className = "go";
+    b.onclick = () => padKey(k);
+    pad.appendChild(b);
+  }
+}
+
+function padKey(k){
+  if (!R || R.done) return;
+  if (k === "⌫") R.input = R.input.slice(0, -1);
+  else if (k === "✓"){ if (R.input.length) return answer(parseInt(R.input, 10)); }
+  else if (R.input.length < 4) R.input += k;
+  const e = $("entry");
+  if (e) e.innerHTML = R.input || `<span class="ph">tap the pad…</span>`;
+}
+
+function buildChoices(){
+  const q = R.q;
+  const opts = shuffle([q.n, ...distractors(q)]);
+  const area = $("answerarea");
+  area.innerHTML = `<div class="choices" id="choices"></div>`;
+  for (const n of opts){
+    const w = render(n, q.sys);
+    const b = document.createElement("button");
+    b.className = "choice"; b.dataset.n = n;
+    b.innerHTML = w.h + (S.rom ? `<span class="crom">${w.r}</span>` : "");
+    b.onclick = () => answer(n, b);
+    $("choices").appendChild(b);
+  }
+}
+
+function answer(n, btn){
+  if (R.done) return;
+  R.done = true;
+  const q = R.q, ok = n === q.n;
+  R.results.push(ok);
+  S.total++;
+  if (ok){
+    R.score++; R.streak++; S.correct++;
+    if (R.streak > S.bestStreak) S.bestStreak = R.streak;
+  } else R.streak = 0;
+  save();
+  renderDots();
+
+  if (btn){
+    btn.classList.add(ok ? "right" : "wrong");
+    if (!ok){
+      const right = document.querySelector(`.choice[data-n="${q.n}"]`);
+      if (right) right.classList.add("right");
+    }
+  }
+  document.querySelectorAll(".choice").forEach(b => b.onclick = null);
+
+  const fb = $("feedback");
+  const ansLine = `${q.n} = ${q.word.h}` + (S.rom ? ` (${q.word.r})` : "");
+  if (ok){
+    fb.innerHTML = `<div class="fb-msg good">${GOOD[randInt(0, GOOD.length - 1)]}</div>
+      <div class="fb-ans">${ansLine}</div>`;
+    setTimeout(() => { R.done = false; R.idx++; nextQuestion(); }, 1100);
+  } else {
+    $("qcard").classList.add("shake");
+    fb.innerHTML = `<div class="fb-msg bad">${BAD[randInt(0, BAD.length - 1)]}</div>
+      <div class="fb-ans">${ansLine}</div>
+      <button class="nextbtn" id="cont">continue →</button>`;
+    speak(q.word.h);
+    $("cont").onclick = () => { R.done = false; R.idx++; nextQuestion(); };
+  }
+}
+
+$("quit").onclick = () => { R = null; renderHome(); show("s-home"); };
+
+/* ---------------- results ---------------- */
+function finishRound(){
+  const lv = R.level, sc = R.score;
+  const stars = sc >= 10 ? 3 : sc >= 8 ? 2 : sc >= 6 ? 1 : 0;
+  if (stars > (S.stars[lv.id] || 0)) S.stars[lv.id] = stars;
+
+  let unlocked = false;
+  if (sc >= 8 && lv.id === S.unlocked && lv.id < LEVELS.length){
+    S.unlocked++; unlocked = true;
+  }
+  save();
+
+  $("remo").textContent = sc >= 8 ? "🌸" : sc >= 6 ? "🍵" : "🫖";
+  $("rtitle").textContent = sc >= 10 ? "완벽해요! Perfect!" : sc >= 8 ? "잘했어요! Lovely!" : sc >= 6 ? "좋아요! Nice!" : "괜찮아요, keep going!";
+  $("rstars").textContent = starStr(stars);
+  $("rscore").textContent = `${sc} / ${ROUND_LEN} · ${lv.emo} ${lv.name}`;
+
+  const un = $("runlock");
+  if (unlocked){
+    const nxt = LEVELS[lv.id]; // lv.id is 1-based, so this is the next level
+    un.style.display = ""; un.textContent = `${nxt.emo} ${nxt.name} unlocked!`;
+  } else un.style.display = "none";
+
+  const nextLv = LEVELS.find(l => l.id === lv.id + 1 && l.id <= S.unlocked && !(l.sinoOnly && S.system === "native"));
+  $("r-next").style.display = nextLv ? "" : "none";
+  $("r-next").onclick = () => startRound(nextLv);
+  $("r-again").onclick = () => startRound(lv);
+  $("r-home").onclick = () => { renderHome(); show("s-home"); };
+
+  show("s-res");
+  if (sc >= 8) petals();
+}
+
+function petals(){
+  const emo = ["🌸","🌿","✿","🍃"];
+  for (let i = 0; i < 14; i++){
+    const p = document.createElement("div");
+    p.className = "petal";
+    p.textContent = emo[randInt(0, emo.length - 1)];
+    p.style.left = randInt(4, 94) + "vw";
+    p.style.animationDuration = (2.4 + Math.random() * 2.2) + "s";
+    p.style.animationDelay = (Math.random() * 0.9) + "s";
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 6200);
+  }
+}
+
+/* ---------------- go ---------------- */
+renderHome();
+</script>
+</body>
+</html>
