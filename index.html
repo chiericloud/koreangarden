@@ -155,6 +155,22 @@
 
   .petal{position:fixed; top:-30px; font-size:22px; animation:fall linear forwards; pointer-events:none; z-index:9}
   @keyframes fall{to{transform:translateY(110vh) rotate(340deg); opacity:.4}}
+
+  /* ---------- study chart ---------- */
+  .studyttl{flex:1; text-align:center; font-weight:700; font-size:16px}
+  .studywrap{flex:1; overflow-y:auto; padding-bottom:8px}
+  .studysec{font-size:11.5px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--muted); margin:16px 4px 8px}
+  .srow{display:grid; grid-template-columns:56px 1fr 1fr; gap:8px; align-items:center; background:color-mix(in srgb,var(--card) 82%,transparent); border:1px solid var(--line); border-radius:14px; padding:9px 12px; margin-bottom:7px; box-shadow:var(--shadow)}
+  .srow.shead{background:none; border:none; box-shadow:none; margin-bottom:0; padding:2px 12px}
+  .srow.shead .kr{font-size:12px}
+  .srow .num{font-weight:800; font-size:17px}
+  .srow .kr{font-weight:700; font-size:17px; text-align:left; padding:2px 0; border-radius:8px; word-break:keep-all}
+  .srow button.kr:active{background:var(--soft)}
+  .srow .kr.sino{color:var(--sage)}
+  .srow .kr.native{color:var(--clay)}
+  .srow .kr.none{color:var(--line); font-weight:400}
+  .srow .rr{display:block; font-size:11.5px; color:var(--muted); font-weight:400; font-style:italic; margin-top:1px}
+  .studynote{font-size:12.5px; color:var(--muted); line-height:1.6; margin:16px 4px 6px; padding:12px 14px; background:var(--soft); border-radius:14px}
 </style>
 
 <div class="app">
@@ -178,6 +194,12 @@
       <button data-sys="both">둘 다 Both</button>
     </div>
     <div class="sysnote" id="sysnote"></div>
+
+    <button class="lvl" id="studybtn">
+      <span class="emo">📖</span>
+      <span><span class="nm">Learn the numbers</span><br><span class="rg">1 = 일 = 하나 · tap any word to hear it</span></span>
+      <span class="stars">→</span>
+    </button>
 
     <div class="levels" id="levels"></div>
 
@@ -213,6 +235,16 @@
         <button class="btn sec" id="r-home">Back to garden</button>
       </div>
     </div>
+  </div>
+
+  <!-- STUDY -->
+  <div class="screen" id="s-study">
+    <div class="qtop">
+      <button class="iconbtn" id="studyquit" aria-label="back to garden">✕</button>
+      <div class="studyttl">📖 Number chart</div>
+      <div style="min-width:44px"></div>
+    </div>
+    <div class="studywrap" id="studywrap"></div>
   </div>
 
 </div>
@@ -335,6 +367,36 @@ $("sysseg").addEventListener("click", e => {
 });
 $("tg-rom").onclick = () => { S.rom = !S.rom; save(); renderHome(); };
 $("tg-listen").onclick = () => { S.listen = !S.listen; save(); renderHome(); };
+
+/* ---------------- study chart ---------------- */
+function studyRowHTML(label, sinoW, natW){
+  const cell = (w, cls) => w
+    ? `<button class="kr ${cls}" data-say="${w.h}">${w.h}<span class="rr">${w.r}</span></button>`
+    : `<span class="kr none">—</span>`;
+  return `<div class="srow"><span class="num">${label}</span>${cell(sinoW, "sino")}${cell(natW, "native")}</div>`;
+}
+
+function renderStudy(){
+  let html = `<div class="srow shead"><span class="num">#</span><span class="kr sino">한자어 SINO</span><span class="kr native">고유어 NATIVE</span></div>`;
+  html += `<div class="studysec">One to ten</div>`;
+  for (let n = 1; n <= 10; n++) html += studyRowHTML(n, sino(n), native(n));
+  html += `<div class="studysec">Tens</div>`;
+  for (let n = 20; n <= 90; n += 10) html += studyRowHTML(n, sino(n), native(n));
+  html += `<div class="studysec">Big numbers · sino only</div>`;
+  html += studyRowHTML(100, sino(100), null);
+  html += studyRowHTML(1000, sino(1000), null);
+  html += `<div class="studysec">How they combine</div>`;
+  for (const n of [11, 25, 37]) html += studyRowHTML(n, sino(n), native(n));
+  html += `<div class="studynote"><b>한자어 Sino</b> — ${SYS_NOTES.sino}<br><br><b>고유어 Native</b> — ${SYS_NOTES.native}</div>`;
+  $("studywrap").innerHTML = html;
+}
+
+$("studybtn").onclick = () => { renderStudy(); show("s-study"); $("studywrap").scrollTop = 0; };
+$("studyquit").onclick = () => { renderHome(); show("s-home"); };
+$("studywrap").addEventListener("click", e => {
+  const b = e.target.closest("[data-say]");
+  if (b) speak(b.dataset.say);
+});
 
 /* ---------------- quiz ---------------- */
 const ROUND_LEN = 10;
